@@ -4,12 +4,14 @@ This package provides everything needed to write a Pumpkin server plugin compile
 
 ## Quick start
 
-1. Clone this repository with submodules:
-
+1. Download the latest release of this package.
 ```bash
-git clone --recursive <url-to-this-repo>
-# Or if you already cloned it:
-git submodule update --init --recursive
+# Assuming the latest version is 0.1.0-dev1
+curl -OL https://github.com/Pumpkin-MC/pumpkin-api-c/releases/download/v0.1.0-dev1/pumpkin-api-0.1.0-dev1.tar.xz
+tar -xJvf pumpkin-api-0.1.0-dev1.tar.xz
+
+# Move and/or name it somewhere/something predictable
+mv pumpkin-api-0.1.0-dev1 pumpkin-api
 ```
 
 2. Create your plugin (`main.c`):
@@ -26,7 +28,8 @@ pumpkin_metadata_t get_meta(void) {
         .authors = authors,
         .authors_count = 1,
         .description = "A simple C plugin for Pumpkin",
-        .dependencies_count = 0
+        .dependencies_count = 0,
+        .permissions_count = 0
     };
 }
 
@@ -42,14 +45,14 @@ REGISTER_PUMPKIN_PLUGIN(((pumpkin_plugin_t){
 
 3. Build your plugin into a WebAssembly component:
 
-To build for Pumpkin, you'll need the `wasi-sdk` and `wit-bindgen`.
+To build for Pumpkin, you'll need the `wasi-sdk`.
 
 ```bash
 # Compile to Wasm using wasi-sdk
-/path/to/wasi-sdk/bin/clang -O3 \
-    -Iinclude -Isrc/gen \
-    src/gen/plugin.c src/pumpkin_api.c example/main.c \
+/path/to/wasi-sdk/bin/wasm32-wasip2-clang -Oz \
+    -Ipumpkin-api/include \
+    pumpkin-api/lib/libpumpkin-api.a \
+    main.c \
     -o my_plugin.wasm \
     -mexec-model=reactor
 ```
-
