@@ -1,0 +1,67 @@
+name: Main
+on:
+  push:
+    branches:
+      - "*"
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  main:
+    name: Build, test, and release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Set up wasi-sdk
+        uses: bytecodealliance/setup-wasi-sdk-action@b2de090b44eb70013ee96b393727d473b35e1728
+
+      - name: Set up wit-bindgen
+        uses: bytecodealliance/actions/wit-bindgen/setup@v1
+
+      - name: Build
+        run: make install
+
+      - name: Test
+        run: wasm32-wasip2-clang -o test_plugin.wasm -mexec-model=reactor -Iinstall/include install/lib/libpumpkin-api.a example/main.c
+
+      - name: Set ARTIFACT_NAME
+        id: artifact-name
+        run: |
+          if [[ '${{ github.ref }}' = refs/tags/v* ]]; then
+            tag='${{ github.ref }}'
+            suffix="-${tag:11}"
+          else
+            suffix="-ci"
+          fi
+          echo "ARTIFACT_NAME=pumpkin-api$suffix" >> $GITHUB_OUTPUT
+
+      - name: Bundle
+        env:
+          ARTIFACT_NAME: ${{ steps.artifact-name.outputs.ARTIFACT_NAME }}
+        run: |
+          mv install $ARTIFACT_NAME
+          tar -cvJf $ARTIFACT_NAME.tar.xz $ARTIFACT_NAME
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          archive: false
+          path: ${{ format('{0}.tar.xz', steps.artifact-name.outputs.ARTIFACT_NAME) }}
+
+      - name: Upload artifacts to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
+          file: ${{ format('{0}.tar.xz', steps.artifact-name.outputs.ARTIFACT_NAME) }}
+          overwrite: true
