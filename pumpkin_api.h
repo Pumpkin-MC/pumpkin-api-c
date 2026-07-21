@@ -10,11 +10,17 @@ extern "C" {
 typedef struct {
     const char* name;
     const char* version;
+
     const char** authors;
     size_t authors_count;
+
     const char* description;
+
     const char** dependencies;
     size_t dependencies_count;
+
+    const char** permissions;
+    size_t permissions_count;
 } pumpkin_metadata_t;
 
 typedef void (*pumpkin_on_load_t)(plugin_own_context_t ctx);
