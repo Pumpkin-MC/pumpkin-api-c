@@ -5,13 +5,18 @@ This package provides everything needed to write a Pumpkin server plugin compile
 ## Quick start
 
 1. Download the latest release of this package.
+
+You'll want to download the latest version of the bindings from the [CI release](https://github.com/Pumpkin-MC/pumpkin-api-c/releases/tag/CI).
+
+We don't have stable versions as Pumpkin and its API is still pre-release.
+
 ```bash
-# Assuming the latest version is 0.1.0-dev1
-curl -OL https://github.com/Pumpkin-MC/pumpkin-api-c/releases/download/v0.1.0-dev1/pumpkin-api-0.1.0-dev1.tar.xz
-tar -xJvf pumpkin-api-0.1.0-dev1.tar.xz
+# Assuming the latest commit is 2428b8a. Skip this if you downloaded manually
+curl -OL https://github.com/Pumpkin-MC/pumpkin-api-c/releases/download/CI/pumpkin-api-c-2428b8a.tar.xz
+tar -xJvf pumpkin-api-c-2428b8a.tar.xz
 
 # Move and/or name it somewhere/something predictable
-mv pumpkin-api-0.1.0-dev1 pumpkin-api
+mv pumpkin-api-c-2428b8a pumpkin-api
 ```
 
 2. Create your plugin (`main.c`):
