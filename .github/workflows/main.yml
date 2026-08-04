@@ -1,11 +1,13 @@
 name: Main
 on:
   push:
-    branches:
-      - "*"
-    tags:
-      - "v*"
+  pull_request:
   workflow_dispatch:
+  workflow_run:
+    types:
+      - completed
+    workflows:
+      - "Update WIT"
 
 permissions:
   contents: write
