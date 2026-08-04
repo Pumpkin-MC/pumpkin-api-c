@@ -33,35 +33,41 @@ jobs:
       - name: Test
         run: wasm32-wasip2-clang -o test_plugin.wasm -mexec-model=reactor -Iinstall/include install/lib/libpumpkin-api.a example/main.c
 
-      - name: Set ARTIFACT_NAME
-        id: artifact-name
+      - name: Set GITHUB_RELEASE_TAG & ARTIFACT_ID
         run: |
+          set -eux
           if [[ '${{ github.ref }}' = refs/tags/v* ]]; then
             tag='${{ github.ref }}'
-            suffix="-${tag:11}"
+            tag="${tag:10}"
+            artifactID="${tag:1}"
           else
-            suffix="-ci"
+            tag=CI
+            artifactID='${{ github.sha }}'
+            artifactID="${artifactID:0:8}"
           fi
-          echo "ARTIFACT_NAME=pumpkin-api$suffix" >> $GITHUB_OUTPUT
+          echo "GITHUB_RELEASE_TAG=$tag" >> $GITHUB_ENV
+          echo "ARTIFACT_ID=$artifactID" >> $GITHUB_ENV
 
       - name: Bundle
-        env:
-          ARTIFACT_NAME: ${{ steps.artifact-name.outputs.ARTIFACT_NAME }}
         run: |
-          mv install $ARTIFACT_NAME
-          tar -cvJf $ARTIFACT_NAME.tar.xz $ARTIFACT_NAME
+          mv install pumpkin-api-c-${ARTIFACT_ID}
+          tar -cvJf pumpkin-api-c-${ARTIFACT_ID}.tar.xz pumpkin-api-c-${ARTIFACT_ID}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           archive: false
-          path: ${{ format('{0}.tar.xz', steps.artifact-name.outputs.ARTIFACT_NAME) }}
+          path: ${{ format('pumpkin-api-c-{0}.tar.xz', env.ARTIFACT_ID) }}
 
       - name: Upload artifacts to release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: svenstaro/upload-release-action@v2
+        if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master'
+        uses: ncipollo/release-action@v1
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
-          file: ${{ format('{0}.tar.xz', steps.artifact-name.outputs.ARTIFACT_NAME) }}
-          overwrite: true
+          tag: ${{ env.GITHUB_RELEASE_TAG }}
+          artifacts: ${{ format('pumpkin-api-c-{0}.tar.xz', env.ARTIFACT_ID) }}
+          allowUpdates: true
+          omitPrereleaseDuringUpdate: true
+          omitName: true
+          omitBody: true
+          omitDraftDuringUpdate: true
+          removeArtifacts: true
