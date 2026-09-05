@@ -59,8 +59,10 @@ bool exports_plugin_on_unload(plugin_own_context_t context_handle,
 void exports_plugin_handle_event(uint32_t event_id,
                                  plugin_own_server_instance_t server,
                                  plugin_event_t *event, plugin_event_t *ret) {
-  // Basic event pass-through
   *ret = *event;
+  pumpkin_event_handler_t handler =
+      (pumpkin_event_handler_t)(uintptr_t)event_id;
+  handler(server, ret);
 }
 
 bool exports_plugin_handle_command(uint32_t command_id,
@@ -68,17 +70,78 @@ bool exports_plugin_handle_command(uint32_t command_id,
                                    plugin_own_server_instance_t server,
                                    plugin_own_consumed_args_t args,
                                    int32_t *ret, plugin_command_error_t *err) {
-  err->tag = PUMPKIN_PLUGIN_COMMAND_COMMAND_ERROR_COMMAND_FAILED;
+  pumpkin_command_handler_t handler =
+      (pumpkin_command_handler_t)(uintptr_t)command_id;
+  return handler(sender, server, args, ret, err);
+}
 
-  plugin_string_t str;
-  plugin_string_set(&str, "Command not implemented");
-
-  pumpkin_plugin_text_own_text_component_t text =
-      pumpkin_plugin_text_static_text_component_text(&str);
-  err->val.command_failed = text;
-
-  return false;
+void exports_plugin_handle_command_suggestion(
+    uint32_t handler_id, plugin_own_command_sender_t sender,
+    plugin_own_server_instance_t server, plugin_suggestion_request_t *request,
+    plugin_command_suggestions_t *ret) {
+  pumpkin_command_suggestion_handler_t handler =
+      (pumpkin_command_suggestion_handler_t)(uintptr_t)handler_id;
+  handler(sender, server, request, ret);
 }
 
 void exports_plugin_handle_task(uint32_t handler_id,
-                                plugin_own_server_instance_t server) {}
+                                plugin_own_server_instance_t server) {
+  pumpkin_task_handler_t handler =
+      (pumpkin_task_handler_t)(uintptr_t)handler_id;
+  handler(server);
+}
+
+bool exports_plugin_handle_ipc_message(plugin_plugin_id_t *sender,
+                                       plugin_ipc_message_t *message,
+                                       plugin_ipc_message_t *ret,
+                                       plugin_string_t *err) {
+  if (g_plugin.handle_ipc_message) {
+    return g_plugin.handle_ipc_message(sender, message, ret, err);
+  }
+
+  plugin_string_dup(err, "This plugin cannot recieve messages");
+  return false;
+}
+
+bool exports_plugin_handle_ai_goal_can_start(
+    uint32_t goal_id, plugin_own_server_instance_t server,
+    plugin_own_entity_t entity) {
+  pumpkin_ai_goal_t *goal = (pumpkin_ai_goal_t *)(uintptr_t)goal_id;
+  return goal->can_start(server, entity);
+}
+
+bool exports_plugin_handle_ai_goal_should_continue(
+    uint32_t goal_id, plugin_own_server_instance_t server,
+    plugin_own_entity_t entity) {
+  pumpkin_ai_goal_t *goal = (pumpkin_ai_goal_t *)(uintptr_t)goal_id;
+  return goal->should_continue(server, entity);
+}
+
+void exports_plugin_handle_ai_goal_start(uint32_t goal_id,
+                                         plugin_own_server_instance_t server,
+                                         plugin_own_entity_t entity) {
+  pumpkin_ai_goal_t *goal = (pumpkin_ai_goal_t *)(uintptr_t)goal_id;
+  goal->start(server, entity);
+}
+
+void exports_plugin_handle_ai_goal_tick(uint32_t goal_id,
+                                        plugin_own_server_instance_t server,
+                                        plugin_own_entity_t entity) {
+  pumpkin_ai_goal_t *goal = (pumpkin_ai_goal_t *)(uintptr_t)goal_id;
+  goal->tick(server, entity);
+}
+
+void exports_plugin_handle_ai_goal_stop(uint32_t goal_id,
+                                        plugin_own_server_instance_t server,
+                                        plugin_own_entity_t entity) {
+  pumpkin_ai_goal_t *goal = (pumpkin_ai_goal_t *)(uintptr_t)goal_id;
+  goal->stop(server, entity);
+}
+
+void exports_plugin_handle_generate_phase(uint32_t generator_id,
+                                          plugin_generation_phase_t phase,
+                                          plugin_own_chunk_buffer_t chunk) {
+  pumpkin_chunk_generator_t handler =
+      (pumpkin_chunk_generator_t)(uintptr_t)generator_id;
+  handler(phase, chunk);
+}
