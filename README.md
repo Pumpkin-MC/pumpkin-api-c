@@ -61,3 +61,15 @@ To build for Pumpkin, you'll need the `wasi-sdk`.
     -o my_plugin.wasm \
     -mexec-model=reactor
 ```
+
+### Build a plugin for a Pumpkin release
+
+Pumpkin `0.1.0-dev+26.2-26.45` and `0.2.0+26.3-26.51` use different snapshots of the plugin WIT API. Generate the bindings from the matching snapshot when building a plugin; using the latest WIT can produce a component that fails Pumpkin's `handle-event` type check.
+
+With `wasi-sdk` and `wit-bindgen` available, build both variants with:
+
+```bash
+make plugins
+```
+
+This creates `build/my_plugin-pumpkin-0.1.wasm` and `build/my_plugin-pumpkin-0.2.wasm`. To build one variant, use `make plugin-pumpkin-0.1` or `make plugin-pumpkin-0.2`. The source defaults to `example/main.c`; override it with `PLUGIN_SOURCE=path/to/plugin.c`. The WIT revisions can also be overridden with `PUMPKIN_01_WIT_REV` and `PUMPKIN_02_WIT_REV`.
