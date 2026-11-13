@@ -27,13 +27,16 @@ jobs:
         uses: bytecodealliance/setup-wasi-sdk-action@b2de090b44eb70013ee96b393727d473b35e1728
 
       - name: Set up wit-bindgen
-        uses: bytecodealliance/actions/wit-bindgen/setup@v1
+        run: cargo install --git https://github.com/bytecodealliance/wit-bindgen --locked wit-bindgen-cli
 
       - name: Build
         run: make install
 
-      - name: Test
-        run: wasm32-wasip2-clang -o test_plugin.wasm -mexec-model=reactor -Iinstall/include install/lib/libpumpkin-api.a example/main.c
+      - name: Test C
+        run: wasm32-wasip3-clang -o test_plugin_c.wasm -mexec-model=reactor -Iinstall/include install/lib/libpumpkin-api.a example/main.c
+
+      - name: Test C++
+        run: wasm32-wasip3-clang++ -std=c++23 -fbracket-depth=1024 -fno-exceptions -o test_plugin_cpp.wasm -mexec-model=reactor -Iinstall/include install/lib/libpumpkin-api-cpp.a example/main.cpp
 
       - name: Set GITHUB_RELEASE_TAG & ARTIFACT_ID
         run: |

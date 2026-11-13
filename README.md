@@ -1,4 +1,4 @@
-# Pumpkin Plugin API for C
+# Pumpkin Plugin API for C / C++
 
 This package provides everything needed to write a Pumpkin server plugin compiled to WebAssembly using C or C++.
 
@@ -19,7 +19,9 @@ tar -xJvf pumpkin-api-c-2428b8a.tar.xz
 mv pumpkin-api-c-2428b8a pumpkin-api
 ```
 
-2. Create your plugin (`main.c`):
+### C Plugin
+
+2. Create your C plugin (`main.c`):
 
 ```c
 #include "pumpkin_api.h"
@@ -48,16 +50,56 @@ REGISTER_PUMPKIN_PLUGIN(((pumpkin_plugin_t){
 }))
 ```
 
-3. Build your plugin into a WebAssembly component:
+3. Build your C plugin into a WebAssembly component:
 
 To build for Pumpkin, you'll need the `wasi-sdk`.
 
 ```bash
 # Compile to Wasm using wasi-sdk
-/path/to/wasi-sdk/bin/wasm32-wasip2-clang -Oz \
+/path/to/wasi-sdk/bin/wasm32-wasip3-clang -Oz \
     -Ipumpkin-api/include \
     pumpkin-api/lib/libpumpkin-api.a \
     main.c \
+    -o my_plugin.wasm \
+    -mexec-model=reactor
+```
+
+### C++ Plugin
+
+2. Create your C++ plugin (`main.cpp`):
+
+```cpp
+#include "pumpkin_api.hpp"
+#include <cstdio>
+
+pumpkin::Metadata get_meta() {
+    static constexpr std::string_view authors[] = {"you"};
+    return {
+        .name = "my-cpp-plugin",
+        .version = "0.1.0",
+        .authors = authors,
+        .description = "A simple C++ plugin for Pumpkin",
+    };
+}
+
+void on_load(pumpkin::plugin::context::Context ctx) {
+    std::printf("C++ plugin loaded!\n");
+}
+
+REGISTER_PUMPKIN_PLUGIN({
+    .get_metadata = get_meta,
+    .on_load = on_load,
+})
+```
+
+3. Build your C++ plugin into a WebAssembly component:
+
+```bash
+# Compile to Wasm using wasi-sdk
+/path/to/wasi-sdk/bin/wasm32-wasip3-clang++ -Oz -std=c++23 -fbracket-depth=1024 -fno-exceptions \
+    -Ipumpkin-api/include \
+    pumpkin-api/lib/libpumpkin-api-cpp.a \
+    main.cpp \
     -o my_plugin.wasm \
     -mexec-model=reactor
 ```
